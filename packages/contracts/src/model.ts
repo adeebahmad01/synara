@@ -150,6 +150,11 @@ export const DroidModelOptions = Schema.Struct({
 });
 export type DroidModelOptions = typeof DroidModelOptions.Type;
 
+export const FxModelOptions = Schema.Struct({
+  variant: Schema.optional(TrimmedNonEmptyString),
+});
+export type FxModelOptions = typeof FxModelOptions.Type;
+
 export const ProviderModelOptions = Schema.Struct({
   codex: Schema.optional(CodexModelOptions),
   claudeAgent: Schema.optional(ClaudeModelOptions),
@@ -160,6 +165,7 @@ export const ProviderModelOptions = Schema.Struct({
   kilo: Schema.optional(OpenCodeModelOptions),
   opencode: Schema.optional(OpenCodeModelOptions),
   pi: Schema.optional(PiModelOptions),
+  fx: Schema.optional(FxModelOptions),
 });
 export type ProviderModelOptions = typeof ProviderModelOptions.Type;
 
@@ -863,6 +869,63 @@ export const MODEL_OPTIONS_BY_PROVIDER = {
   ],
   // Pi discovery owns the live catalog, including auth-gated Anthropic models.
   pi: [],
+  fx: [
+    {
+      slug: "zai/glm-5.2",
+      name: "GLM-5.2",
+      capabilities: {
+        reasoningEffortLevels: [],
+        supportsFastMode: false,
+        supportsThinkingToggle: false,
+        promptInjectedEffortLevels: [],
+        contextWindowOptions: [],
+      },
+    },
+    {
+      slug: "openai/gpt-5.6-sol",
+      name: "GPT-5.6 Sol",
+      capabilities: {
+        reasoningEffortLevels: [],
+        supportsFastMode: false,
+        supportsThinkingToggle: false,
+        promptInjectedEffortLevels: [],
+        contextWindowOptions: [],
+      },
+    },
+    {
+      slug: "anthropic/claude-opus-5",
+      name: "Claude Opus 5",
+      capabilities: {
+        reasoningEffortLevels: [],
+        supportsFastMode: false,
+        supportsThinkingToggle: false,
+        promptInjectedEffortLevels: [],
+        contextWindowOptions: [],
+      },
+    },
+    {
+      slug: "anthropic/claude-sonnet-5",
+      name: "Claude Sonnet 5",
+      capabilities: {
+        reasoningEffortLevels: [],
+        supportsFastMode: false,
+        supportsThinkingToggle: false,
+        promptInjectedEffortLevels: [],
+        contextWindowOptions: [],
+      },
+    },
+    {
+      slug: "openai/gpt-5.4",
+      name: "GPT-5.4",
+      capabilities: {
+        reasoningEffortLevels: [],
+        supportsFastMode: false,
+        supportsThinkingToggle: false,
+        promptInjectedEffortLevels: [],
+        contextWindowOptions: [],
+      },
+    },
+  ],
   cursor: [
     {
       // Cursor exposes auto as the `default` model id over ACP; the adapter maps it.
@@ -1078,6 +1141,7 @@ export const DEFAULT_MODEL_BY_PROVIDER: Record<ProviderWithDefaultModel, ModelSl
   droid: "claude-opus-4-8",
   kilo: "kilo/kilo-auto/free",
   opencode: "openai/gpt-5",
+  fx: "zai/glm-5.2",
 };
 
 // Backward compatibility for existing Codex-only call sites.
@@ -1219,6 +1283,18 @@ export const MODEL_SLUG_ALIASES_BY_PROVIDER: Record<ProviderKind, Record<string,
   kilo: {},
   opencode: {},
   pi: {},
+  fx: {
+    "zai/glm-5.2": "zai/glm-5.2",
+    glm: "zai/glm-5.2",
+    "glm-5.2": "zai/glm-5.2",
+    sol: "openai/gpt-5.6-sol",
+    "gpt-5.6": "openai/gpt-5.6-sol",
+    "gpt-5.6-sol": "openai/gpt-5.6-sol",
+    opus: "anthropic/claude-opus-5",
+    "opus-5": "anthropic/claude-opus-5",
+    sonnet: "anthropic/claude-sonnet-5",
+    "sonnet-5": "anthropic/claude-sonnet-5",
+  },
 };
 
 // ── Agent mention aliases ─────────────────────────────────────────────
@@ -1261,4 +1337,5 @@ export const PROVIDER_DISPLAY_NAMES: Record<ProviderKind, string> = {
   kilo: "Kilo",
   opencode: "OpenCode",
   pi: "Pi",
+  fx: "Fx",
 };

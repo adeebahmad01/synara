@@ -236,6 +236,12 @@ const PROVIDER_TARGET_OPTION_RULES = {
       }),
     },
   }),
+  fx: defineProviderOptionConfig<"fx">({
+    primaryOptionKey: "variant",
+    options: {
+      variant: providerOptionRule("string", [], "model-discovery"),
+    },
+  }),
 } as const satisfies Record<ProviderKind, ProviderTargetOptionConfig>;
 
 function providerDefaultModel(provider: ProviderKind): string | null {

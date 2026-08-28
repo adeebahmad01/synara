@@ -121,6 +121,16 @@ export const PROVIDER_DESCRIPTORS = defineProviderDescriptors([
       learnMoreHref: "https://pi.dev",
     },
   },
+  {
+    kind: "fx",
+    displayName: PROVIDER_DISPLAY_NAMES.fx,
+    available: true,
+    supportsNativeTurnSteering: false,
+    usage: {
+      signInCommand: "fx login",
+      learnMoreHref: "https://fx.sh",
+    },
+  },
 ] as const satisfies readonly ProviderDescriptor[]);
 
 export const PROVIDER_DESCRIPTOR_BY_KIND = Object.fromEntries(

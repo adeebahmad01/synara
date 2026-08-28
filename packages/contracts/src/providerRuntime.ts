@@ -28,6 +28,7 @@ const RuntimeEventRawSource = Schema.Literals([
   "antigravity.cli.event",
   "acp.jsonrpc",
   "acp.cursor.extension",
+  "acp.fx.extension",
   "kilo.sdk.event",
   "opencode.sdk.event",
   "pi.sdk.event",

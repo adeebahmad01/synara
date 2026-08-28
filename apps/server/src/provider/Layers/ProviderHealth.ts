@@ -120,6 +120,7 @@ const DROID_PROVIDER = "droid" as const;
 const KILO_PROVIDER = "kilo" as const;
 const OPENCODE_PROVIDER = "opencode" as const;
 const PI_PROVIDER = "pi" as const;
+const FX_PROVIDER = "fx" as const;
 type ProviderStatuses = ReadonlyArray<ServerProviderStatus>;
 const DISABLED_PROVIDER_STATUS_MESSAGE = "Provider is disabled in Synara settings.";
 const MINIMUM_ANTIGRAVITY_CLI_VERSION = "1.0.12";
@@ -134,6 +135,7 @@ const PROVIDERS = [
   KILO_PROVIDER,
   OPENCODE_PROVIDER,
   PI_PROVIDER,
+  FX_PROVIDER,
 ] as const satisfies ReadonlyArray<ProviderKind>;
 
 const providerChildKind = (provider: ProviderKind): ProviderChildKind =>
@@ -839,6 +841,15 @@ function cursorModelsOutputHasNoModels(output: string): boolean {
 
 const runPiCommand = (args: ReadonlyArray<string>, executable = "pi") =>
   runProviderCommand(executable, args, providerCommandEnv(PI_PROVIDER)).pipe(
+    Effect.flatMap((result) =>
+      isWindowsShellCommandMissingResult({ code: result.code, stderr: result.stderr })
+        ? Effect.fail(new Error(`spawn ${executable} ENOENT`))
+        : Effect.succeed(result),
+    ),
+  );
+
+const runFxCommand = (args: ReadonlyArray<string>, executable = "fx") =>
+  runProviderCommand(executable, args, providerCommandEnv(FX_PROVIDER)).pipe(
     Effect.flatMap((result) =>
       isWindowsShellCommandMissingResult({ code: result.code, stderr: result.stderr })
         ? Effect.fail(new Error(`spawn ${executable} ENOENT`))
@@ -1624,6 +1635,86 @@ export const checkPiProviderStatus = (
     } satisfies ServerProviderStatus;
   });
 
+// ── Fx health check ──────────────────────────────────────────────
+
+export const makeCheckFxProviderStatus = (
+  binaryPath?: string,
+): Effect.Effect<ServerProviderStatus, never, ChildProcessSpawner.ChildProcessSpawner> =>
+  Effect.gen(function* () {
+    const checkedAt = new Date().toISOString();
+    const executable = nonEmptyTrimmed(binaryPath) ?? "fx";
+
+    const versionProbe = yield* probeProviderCliVersion(
+      runFxCommand(["--version"], executable),
+      DEFAULT_TIMEOUT_MS,
+    );
+
+    if (versionProbe.outcome === "missing" || versionProbe.outcome === "failure") {
+      const error = versionProbe.cause;
+      return {
+        provider: FX_PROVIDER,
+        status: "error" as const,
+        available: false,
+        authStatus: "unknown" as const,
+        checkedAt,
+        message:
+          versionProbe.outcome === "missing"
+            ? "Fx CLI (`fx`) is not installed or not on PATH. Install it from https://fx.sh"
+            : `Failed to execute Fx CLI health check: ${error instanceof Error ? error.message : String(error)}.`,
+      } satisfies ServerProviderStatus;
+    }
+
+    if (versionProbe.outcome === "timeout") {
+      return {
+        provider: FX_PROVIDER,
+        status: "error" as const,
+        available: false,
+        authStatus: "unknown" as const,
+        checkedAt,
+        message: "Fx CLI is installed but failed to run. Timed out while running command.",
+      } satisfies ServerProviderStatus;
+    }
+
+    if (versionProbe.outcome === "nonzero") {
+      const version = versionProbe.result;
+      const detail = detailFromResult(version);
+      return {
+        provider: FX_PROVIDER,
+        status: "error" as const,
+        available: false,
+        authStatus: "unknown" as const,
+        checkedAt,
+        message: detail
+          ? `Fx CLI is installed but failed to run. ${detail}`
+          : "Fx CLI is installed but failed to run.",
+      } satisfies ServerProviderStatus;
+    }
+    const version = versionProbe.result;
+    const parsedVersion = parseGenericCliVersion(`${version.stdout}\n${version.stderr}`);
+    const hasGatewayKey = Boolean(
+      process.env.AI_GATEWAY_API_KEY?.trim() || process.env.FX_API_KEY?.trim(),
+    );
+    // Fx stores auth in ~/.fx/auth.json; presence suggests authenticated.
+    // We treat missing gateway key as unknown rather than error so the provider
+    // remains usable via `fx login` flow.
+    return {
+      provider: FX_PROVIDER,
+      status: "ready" as const,
+      available: true,
+      authStatus: hasGatewayKey ? ("authenticated" as const) : ("unknown" as const),
+      version: parsedVersion,
+      checkedAt,
+      ...(hasGatewayKey
+        ? { authType: "apiKey", authLabel: "AI Gateway API Key" }
+        : {
+            message:
+              "Fx CLI is installed. Run `fx login` or set AI_GATEWAY_API_KEY to authenticate.",
+          }),
+    } satisfies ServerProviderStatus;
+  });
+
+export const checkFxProviderStatus = makeCheckFxProviderStatus();
+
 // ── Antigravity CLI health check ──────────────────────────────────
 
 export const checkAntigravityProviderStatus = (
@@ -2205,6 +2296,8 @@ export function makeProviderHealthLive(options?: { readonly providerUpdateTimeou
             return settings.providers.opencode.binaryPath;
           case "pi":
             return settings.providers.pi.binaryPath;
+          case "fx":
+            return settings.providers.fx.binaryPath;
         }
       };
 

@@ -9,6 +9,7 @@ export type ProviderChildKind =
   | "codex"
   | "cursor"
   | "droid"
+  | "fx"
   | "grok"
   | "kilo"
   | "opencode"
@@ -56,6 +57,7 @@ const PROVIDER_CREDENTIAL_GRANTS: Record<ProviderChildKind, "all" | ReadonlySet<
   ]),
   cursor: new Set(["CURSOR_API_KEY"]),
   droid: new Set(["FACTORY_API_KEY"]),
+  fx: new Set(["AI_GATEWAY_API_KEY", "VERCEL_OIDC_TOKEN", "FX_API_KEY"]),
   grok: new Set(["XAI_API_KEY", "GROK_CODE_XAI_API_KEY"]),
   // These profiles deliberately support arbitrary upstream model providers.
   acp: "all",

@@ -1100,28 +1100,34 @@ const makeAcpSessionRuntime = (
           ? yield* options.resolveAuthMethodId(initializeResult)
           : options.authMethodId;
 
-      if (!authMethodId) {
+      const advertisedAuthMethods = initializeResult.authMethods ?? [];
+      const shouldSkipAuthenticate =
+        advertisedAuthMethods.length === 0 && authMethodId === undefined;
+
+      if (!authMethodId && !shouldSkipAuthenticate) {
         return yield* new AcpErrors.AcpRequestError({
           code: -32602,
           errorMessage: "ACP agent did not provide an authentication method.",
-          data: { authMethods: initializeResult.authMethods ?? [] },
+          data: { authMethods: advertisedAuthMethods },
         });
       }
 
-      const authenticatePayload = {
-        methodId: authMethodId,
-        ...(options.authenticateMeta ? { _meta: options.authenticateMeta } : {}),
-      } satisfies Acp.AuthenticateRequest;
+      if (!shouldSkipAuthenticate && authMethodId) {
+        const authenticatePayload = {
+          methodId: authMethodId,
+          ...(options.authenticateMeta ? { _meta: options.authenticateMeta } : {}),
+        } satisfies Acp.AuthenticateRequest;
 
-      yield* withStartupTimeout(
-        "authenticate",
-        startupTimeouts.authenticateMs,
-        runLoggedRequest(
+        yield* withStartupTimeout(
           "authenticate",
-          authenticatePayload,
-          acp.agent.authenticate(authenticatePayload),
-        ),
-      );
+          startupTimeouts.authenticateMs,
+          runLoggedRequest(
+            "authenticate",
+            authenticatePayload,
+            acp.agent.authenticate(authenticatePayload),
+          ),
+        );
+      }
 
       const mcpServers = options.buildMcpServers?.(initializeResult) ?? [];
       const sessionCwd = resolveAcpSessionCwd(options.cwd);

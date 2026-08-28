@@ -24,6 +24,7 @@ import { GrokAdapter } from "../Services/GrokAdapter.ts";
 import { KiloAdapter } from "../Services/KiloAdapter.ts";
 import { OpenCodeAdapter } from "../Services/OpenCodeAdapter.ts";
 import { PiAdapter } from "../Services/PiAdapter.ts";
+import { FxAdapter } from "../Services/FxAdapter.ts";
 import { AntigravityAdapter } from "../Services/AntigravityAdapter.ts";
 
 export interface ProviderAdapterRegistryLiveOptions {
@@ -45,6 +46,7 @@ const makeProviderAdapterRegistry = (options?: ProviderAdapterRegistryLiveOption
             yield* KiloAdapter,
             yield* OpenCodeAdapter,
             yield* PiAdapter,
+            yield* FxAdapter,
           ];
 
     for (const adapter of adapters) {
